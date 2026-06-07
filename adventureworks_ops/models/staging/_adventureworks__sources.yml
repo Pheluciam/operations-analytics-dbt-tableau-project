@@ -9,6 +9,9 @@ version: 2
 # they establish the referential chain and act as the source-quality gate. The
 # heavier custom generic tests, dbt-utils and dbt-expectations land in Phase 3.
 #
+# Generic-test arguments are nested under `arguments:` per dbt 1.11 (the current
+# required form; top-level test args are deprecated).
+#
 # Source freshness is intentionally NOT configured: this is a static historical
 # load (newest modifieddate ~2014), so a freshness lag check would always report
 # stale and tells us nothing. An illustrative example is left commented on
@@ -38,15 +41,17 @@ sources:
             tests:
               - not_null
               - relationships:
-                  to: source('production', 'product')
-                  field: productid
+                  arguments:
+                    to: source('production', 'product')
+                    field: productid
           - name: businessentityid
             description: FK to purchasing.vendor.
             tests:
               - not_null
               - relationships:
-                  to: source('purchasing', 'vendor')
-                  field: businessentityid
+                  arguments:
+                    to: source('purchasing', 'vendor')
+                    field: businessentityid
 
       - name: purchaseorderheader
         description: Inbound purchase-order headers (one per PO raised on a vendor).
@@ -59,8 +64,9 @@ sources:
             tests:
               - not_null
               - relationships:
-                  to: source('purchasing', 'vendor')
-                  field: businessentityid
+                  arguments:
+                    to: source('purchasing', 'vendor')
+                    field: businessentityid
 
       - name: purchaseorderdetail
         description: Inbound purchase-order line items.
@@ -73,15 +79,17 @@ sources:
             tests:
               - not_null
               - relationships:
-                  to: source('purchasing', 'purchaseorderheader')
-                  field: purchaseorderid
+                  arguments:
+                    to: source('purchasing', 'purchaseorderheader')
+                    field: purchaseorderid
           - name: productid
             description: FK to production.product.
             tests:
               - not_null
               - relationships:
-                  to: source('production', 'product')
-                  field: productid
+                  arguments:
+                    to: source('production', 'product')
+                    field: productid
 
   # ---------------------------------------------------------------------------
   # WAREHOUSE — products, stock on hand, locations, stock movements
@@ -112,15 +120,17 @@ sources:
             tests:
               - not_null
               - relationships:
-                  to: source('production', 'product')
-                  field: productid
+                  arguments:
+                    to: source('production', 'product')
+                    field: productid
           - name: locationid
             description: FK to production.location.
             tests:
               - not_null
               - relationships:
-                  to: source('production', 'location')
-                  field: locationid
+                  arguments:
+                    to: source('production', 'location')
+                    field: locationid
 
       - name: transactionhistory
         description: >
@@ -140,8 +150,9 @@ sources:
             tests:
               - not_null
               - relationships:
-                  to: source('production', 'product')
-                  field: productid
+                  arguments:
+                    to: source('production', 'product')
+                    field: productid
 
       - name: productlistpricehistory
         description: >
@@ -153,8 +164,9 @@ sources:
             tests:
               - not_null
               - relationships:
-                  to: source('production', 'product')
-                  field: productid
+                  arguments:
+                    to: source('production', 'product')
+                    field: productid
           - name: startdate
             description: Date this price became effective.
             tests: [not_null]
@@ -184,8 +196,9 @@ sources:
             tests:
               - not_null
               - relationships:
-                  to: source('sales', 'customer')
-                  field: customerid
+                  arguments:
+                    to: source('sales', 'customer')
+                    field: customerid
 
       - name: salesorderdetail
         description: Outbound sales-order line items.
@@ -198,12 +211,14 @@ sources:
             tests:
               - not_null
               - relationships:
-                  to: source('sales', 'salesorderheader')
-                  field: salesorderid
+                  arguments:
+                    to: source('sales', 'salesorderheader')
+                    field: salesorderid
           - name: productid
             description: FK to production.product.
             tests:
               - not_null
               - relationships:
-                  to: source('production', 'product')
-                  field: productid
+                  arguments:
+                    to: source('production', 'product')
+                    field: productid

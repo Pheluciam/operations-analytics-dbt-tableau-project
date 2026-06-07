@@ -31,6 +31,11 @@ clean-targets:         # directories to be removed by `dbt clean`
 # files using the `{{ config(...) }}` macro.
 models:
   adventureworks_ops:
-    # Staging models clean/rename/type the raw sources; built as views.
+    # Staging models clean/rename/type the raw sources; built as views
+    # (always fresh against source, no storage cost).
     staging:
       +materialized: view
+    # Core dimensional + fact models (the published star); built as tables
+    # so Tableau queries hit materialised data, not nested views.
+    marts:
+      +materialized: table

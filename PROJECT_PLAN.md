@@ -95,9 +95,20 @@ Source freshness intentionally omitted (static historical data). Note: data load
 its native AdventureWorks schemas (purchasing/production/sales), not a single `raw`
 schema — dbt `sources` point straight at them.
 
-**Phase 2 — Staging + core models.** Staging models (clean/rename/type). Core
-dimensional + fact models for the distribution flow (e.g. dim_product, dim_supplier,
-dim_customer, dim_location, fct_sales_order_lines, fct_stock_movements).
+**Phase 2 — Staging + core models. ✅ (2026-06-08)** 12 staging views + 8 marts
+tables (dim_product, dim_vendor, dim_customer, dim_location, fct_purchase_order_lines,
+fct_sales_order_lines, fct_stock_movements, fct_product_inventory). Surrogate keys via
+dbt_utils.generate_surrogate_key; star integrity via relationships tests. Full
+`dbt build` = 132 PASS / 0 ERROR / 0 deprecations; fact row-count parity exact.
+
+Phase 2 forward-verify decisions (banked 2026-06-08, see LEARNINGS Risks M1-6/7/8):
+- Single output schema for ALL models — no per-folder `+schema` config (avoids the
+  `target.schema_custom` concatenation). Layers are distinguished by name prefix
+  (`stg_`/`dim_`/`fct_`), not by schema.
+- dbt-utils pulled forward from Phase 3 to Phase 2 (Phil GO): pin
+  `dbt-labs/dbt_utils: 1.3.3` in `packages.yml`, run `dbt deps`, use
+  `generate_surrogate_key(['…'])` for fact/dim surrogate keys rather than hand-rolling.
+- Staging = `view`; warehouse/marts = `table` (dbt_project.yml per-folder defaults).
 
 **Phase 3 — dbt depth (the lead theme).**
 - Custom generic test(s) authored from scratch.

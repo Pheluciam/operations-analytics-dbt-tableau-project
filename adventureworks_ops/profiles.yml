@@ -1,7 +1,9 @@
 # dbt connection profile for the AdventureWorks operations project.
-# Safe to commit: the password is injected at runtime from the DBT_PG_PASSWORD
+# Safe to commit: the password is injected at runtime from the PGPASSWORD
 # environment variable via env_var(), so no secret ever lives in this file or
-# the repo (ENGINEERING_STANDARDS.md criterion 4).
+# the repo (ENGINEERING_STANDARDS.md criterion 4). PGPASSWORD is the libpq
+# standard variable, so psql reads it natively and dbt reads the same value —
+# one setting authenticates both tools.
 # dbt-core reads this file automatically when dbt is run from this directory.
 adventureworks_ops:
   target: dev
@@ -14,7 +16,7 @@ adventureworks_ops:
       # postgres superuser is acceptable for a local learning DB; a dedicated
       # least-privilege dbt role is the production hardening (deferred).
       user: postgres
-      password: "{{ env_var('DBT_PG_PASSWORD') }}"
+      password: "{{ env_var('PGPASSWORD') }}"
       # Default build schema; per-layer schemas (staging/marts) come in Phase 2.
       schema: analytics
       threads: 4

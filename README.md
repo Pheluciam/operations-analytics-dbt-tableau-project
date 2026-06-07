@@ -4,10 +4,12 @@ Mini-project showcasing **dbt testing + macros depth** on a wholesale warehouse 
 distribution dataset, modelled in **local PostgreSQL** with **dbt-postgres** and
 visualised in **Tableau Public**.
 
-> **Status:** Phase 1 complete — local Postgres + dbt-postgres environment stood up,
-> the AdventureWorks distribution slice loaded and row-count verified, the dbt project
-> scaffolded, and 12 sources defined with 43 passing tests. Phase 2 (staging + core
-> models) is next.
+> **Status:** Phase 2 complete — a full dimensional warehouse over the AdventureWorks
+> distribution slice: 12 staging views + an 8-table star (4 conformed dimensions,
+> 4 facts) with hashed surrogate keys and referential-integrity tests. `dbt build`
+> runs 132 tests green with zero deprecations; fact row counts match source exactly.
+> Phase 3 (dbt depth — custom generic tests, dbt-utils + dbt-expectations, a reusable
+> macro, an incremental model and a snapshot) is next.
 
 ## Focus (one lead theme, kept tight)
 

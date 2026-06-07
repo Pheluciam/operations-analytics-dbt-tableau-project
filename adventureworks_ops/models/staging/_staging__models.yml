@@ -1,0 +1,108 @@
+version: 2
+
+# Staging-layer models: one per source table, light clean/rename/type only.
+# Primary-key uniqueness + not_null are asserted here because downstream marts
+# read from staging, not from raw. Composite grains assert not_null on each key
+# part now; the combined-uniqueness test (dbt_utils) lands in Phase 3.
+
+models:
+
+  # --- INBOUND -------------------------------------------------------------
+  - name: stg_purchasing__vendor
+    description: One row per supplier we buy finished goods from.
+    columns:
+      - name: vendor_id
+        description: Vendor primary key (renamed from businessentityid).
+        tests: [not_null, unique]
+
+  - name: stg_purchasing__product_vendor
+    description: Which vendor supplies which product, with lead time and cost terms.
+    columns:
+      - name: product_id
+        tests: [not_null]
+      - name: vendor_id
+        tests: [not_null]
+
+  - name: stg_purchasing__purchase_order_header
+    description: One row per inbound purchase order raised on a vendor.
+    columns:
+      - name: purchase_order_id
+        tests: [not_null, unique]
+      - name: vendor_id
+        tests: [not_null]
+
+  - name: stg_purchasing__purchase_order_detail
+    description: Inbound purchase-order line items.
+    columns:
+      - name: purchase_order_detail_id
+        tests: [not_null, unique]
+      - name: purchase_order_id
+        tests: [not_null]
+      - name: product_id
+        tests: [not_null]
+
+  # --- WAREHOUSE -----------------------------------------------------------
+  - name: stg_production__product
+    description: Product / SKU master.
+    columns:
+      - name: product_id
+        tests: [not_null, unique]
+
+  - name: stg_production__location
+    description: Warehouse locations / bins where stock is held.
+    columns:
+      - name: location_id
+        tests: [not_null, unique]
+
+  - name: stg_production__product_inventory
+    description: On-hand quantity of each product at each location.
+    columns:
+      - name: product_id
+        tests: [not_null]
+      - name: location_id
+        tests: [not_null]
+
+  - name: stg_production__transaction_history
+    description: >
+      Append-only stock-movement ledger (P/S/W). Source for the Phase 3
+      incremental model.
+    columns:
+      - name: transaction_id
+        tests: [not_null, unique]
+      - name: product_id
+        tests: [not_null]
+
+  - name: stg_production__product_list_price_history
+    description: >
+      Dated list-price changes per product. Natural SCD source for the Phase 3
+      snapshot. Grain: (product_id, start_date).
+    columns:
+      - name: product_id
+        tests: [not_null]
+      - name: start_date
+        tests: [not_null]
+
+  # --- OUTBOUND ------------------------------------------------------------
+  - name: stg_sales__customer
+    description: Retailer / reseller customers we sell to.
+    columns:
+      - name: customer_id
+        tests: [not_null, unique]
+
+  - name: stg_sales__sales_order_header
+    description: One row per outbound sales order.
+    columns:
+      - name: sales_order_id
+        tests: [not_null, unique]
+      - name: customer_id
+        tests: [not_null]
+
+  - name: stg_sales__sales_order_detail
+    description: Outbound sales-order line items.
+    columns:
+      - name: sales_order_detail_id
+        tests: [not_null, unique]
+      - name: sales_order_id
+        tests: [not_null]
+      - name: product_id
+        tests: [not_null]

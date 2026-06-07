@@ -28,13 +28,13 @@ published to Tableau Public. Mini #1 of 3. Target ~4-5 days.
   survives any dataset pivot at the gate). Never renamed mid-project.
 - Out of scope: dbt Cloud CI/CD (training journey wk 7), Power BI.
 
-## Open / pending (Phase 2 — staging + core models, NOT started)
+## Open / pending (Phase 3 — dbt depth: the lead theme, NOT started)
 
-- Build staging models (clean/rename/type) over the 12 source tables.
-- Build core dimensional + fact models for the distribution flow (dim_product,
-  dim_vendor, dim_customer, dim_location, fct_purchase_order_lines,
-  fct_sales_order_lines, fct_stock_movements).
-- Run the Phase 2 kickoff forward-verify pass first (per ENGINEERING_STANDARDS).
+- Custom generic test(s) authored from scratch.
+- dbt-utils (already installed, pinned 1.3.3) + dbt-expectations tests across models.
+- One reusable macro.
+- One incremental model (transactionhistory). One snapshot (productlistpricehistory)
+  if time.
 - Tableau Public account: still to confirm before Phase 4 (not needed yet).
 
 ## Working rules (this mini)
@@ -96,3 +96,28 @@ published to Tableau Public. Mini #1 of 3. Target ~4-5 days.
 - GitHub repo created + inaugural bundled commit pushed at session close (first push).
 - Next session starts at: Phase 2 (staging + core models). Run the Phase 2 forward-verify
   pass first.
+
+### Session 3 — 2026-06-08 — Phase 2 build (staging + core star) — CLOSED
+- Ran the Phase 2 forward-verify pass (docs.getdbt.com): banked Risks M1-6/7/8 in
+  LEARNINGS before building. Decisions: single output schema (no per-folder +schema,
+  avoids target.schema_custom concatenation); dbt-utils pulled forward from Phase 3 and
+  pinned 1.3.3 in packages.yml; generate_surrogate_key for fact/dim keys.
+- Built 12 staging models (one per source, import/final CTE, snake_case rename, light
+  DATE recasts, rowguid dropped) materialized as views; _staging__models.yml with PK
+  not_null/unique. Columns verified against information_schema first (not assumed).
+- Built 8 marts as tables: dim_product/dim_vendor/dim_customer/dim_location +
+  fct_purchase_order_lines/fct_sales_order_lines/fct_stock_movements/fct_product_inventory
+  (added the inventory fact so dim_location isn't an orphan). Surrogate keys via
+  dbt_utils.generate_surrogate_key; star integrity via relationships tests fact->dim.
+- Migrated all relationships tests (sources + marts) to the dbt 1.11 arguments: syntax;
+  full dbt build now 132 PASS / 0 ERROR / 0 deprecations.
+- Verification: row-count parity fct vs source exact on all three line/movement facts
+  (sales 121317, PO 8845, stock 113443). 10-criteria audit all PASS; structural audit
+  clean (20 models, 3 schema YAMLs, all paired, no stray .gitkeep).
+- Credential handling fixed permanently: pgpass.conf failed on Windows (libpq resolves
+  localhost->::1 and skips the file). Switched to PGPASSWORD env var set once via setx;
+  profiles.yml reads env_var('PGPASSWORD'); psql + dbt both authenticate, every terminal,
+  no per-session password, nothing secret in the repo. (Old DBT_PG_PASSWORD retired.)
+- TODO carry-forward: rotate the Postgres password (it was shown on screen during setup).
+- Next session starts at: Phase 3 (dbt depth — custom generic tests, dbt-utils +
+  dbt-expectations, reusable macro, incremental + snapshot).

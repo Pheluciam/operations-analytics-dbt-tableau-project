@@ -1,0 +1,120 @@
+version: 2
+
+# Core star-schema layer: conformed dimensions + fact tables, materialized as
+# tables. Each surrogate key (*_key) is hashed via dbt_utils.generate_surrogate_key
+# and tested unique + not_null. Fact foreign keys carry relationships tests back
+# to their dimension, asserting referential integrity across the star.
+#
+# Generic-test arguments are nested under `arguments:` per dbt 1.11 (the current
+# required form; top-level test args are deprecated).
+
+models:
+
+  # --- DIMENSIONS ----------------------------------------------------------
+  - name: dim_product
+    description: One row per product / SKU. Conformed product dimension.
+    columns:
+      - name: product_key
+        description: Hashed surrogate key.
+        tests: [not_null, unique]
+      - name: product_id
+        description: Natural key from the source.
+        tests: [not_null, unique]
+
+  - name: dim_vendor
+    description: One row per supplier we buy from.
+    columns:
+      - name: vendor_key
+        tests: [not_null, unique]
+      - name: vendor_id
+        tests: [not_null, unique]
+
+  - name: dim_customer
+    description: One row per customer we sell to.
+    columns:
+      - name: customer_key
+        tests: [not_null, unique]
+      - name: customer_id
+        tests: [not_null, unique]
+
+  - name: dim_location
+    description: One row per warehouse location / bin.
+    columns:
+      - name: location_key
+        tests: [not_null, unique]
+      - name: location_id
+        tests: [not_null, unique]
+
+  # --- FACTS ---------------------------------------------------------------
+  - name: fct_purchase_order_lines
+    description: Grain = one inbound purchase-order line.
+    columns:
+      - name: purchase_order_line_key
+        tests: [not_null, unique]
+      - name: product_key
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_product')
+                field: product_key
+      - name: vendor_key
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_vendor')
+                field: vendor_key
+
+  - name: fct_sales_order_lines
+    description: Grain = one outbound sales-order line.
+    columns:
+      - name: sales_order_line_key
+        tests: [not_null, unique]
+      - name: product_key
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_product')
+                field: product_key
+      - name: customer_key
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_customer')
+                field: customer_key
+
+  - name: fct_stock_movements
+    description: Grain = one stock-movement ledger entry (P/S/W).
+    columns:
+      - name: stock_movement_key
+        tests: [not_null, unique]
+      - name: product_key
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_product')
+                field: product_key
+
+  - name: fct_product_inventory
+    description: Grain = on-hand quantity per (product, location).
+    columns:
+      - name: product_inventory_key
+        tests: [not_null, unique]
+      - name: product_key
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_product')
+                field: product_key
+      - name: location_key
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_location')
+                field: location_key
