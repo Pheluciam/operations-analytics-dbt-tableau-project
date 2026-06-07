@@ -1,0 +1,25 @@
+# Python virtual environment
+.venv/
+__pycache__/
+*.pyc
+
+# Secrets — never commit the real password file
+.env
+
+# dbt artifacts (root-level logs come from running dbt at the repo root;
+# the dbt project folder has its own .gitignore for target/ dbt_packages/ logs/)
+logs/
+target/
+dbt_packages/
+# dbt writes a machine-specific anonymous-usage id here — not for version control
+.user.yml
+
+# OS / editor noise
+.DS_Store
+.vscode/
+
+# Personal / cross-project carry-forward files — kept local, NOT for the public repo
+LEARNINGS.md
+LEARNING_ROADMAP.md
+TEACHING_PREFERENCES.md
+MINI1_KICKOFF.md

@@ -1,0 +1,6 @@
+# dbt + Postgres adapter — pinned to the June 2026 compatible-release track.
+# Exact pins (not >=) keep the build reproducible and, critically, stop pip from
+# resolving dbt-core 2.0-alpha (Fusion), which does not yet support the postgres
+# adapter on Windows (dbt-adapters issue #1992).
+dbt-core==1.11.8
+dbt-postgres==1.10.0

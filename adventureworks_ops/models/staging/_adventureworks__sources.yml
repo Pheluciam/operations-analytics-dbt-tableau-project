@@ -1,0 +1,209 @@
+version: 2
+
+# Raw AdventureWorks tables, exposed to dbt as sources. We model only the
+# wholesale-distribution slice (inbound -> warehouse -> outbound); manufacturing
+# and HR schemas are intentionally ignored. Each source is named after its
+# Postgres schema, because dbt scopes one schema per source.
+#
+# Tests here are deliberately built-in only (not_null / unique / relationships):
+# they establish the referential chain and act as the source-quality gate. The
+# heavier custom generic tests, dbt-utils and dbt-expectations land in Phase 3.
+#
+# Source freshness is intentionally NOT configured: this is a static historical
+# load (newest modifieddate ~2014), so a freshness lag check would always report
+# stale and tells us nothing. An illustrative example is left commented on
+# transactionhistory below to show the technique.
+
+sources:
+
+  # ---------------------------------------------------------------------------
+  # INBOUND — purchasing from vendors
+  # ---------------------------------------------------------------------------
+  - name: purchasing
+    schema: purchasing
+    description: Procurement — vendors and the purchase orders we raise against them.
+    tables:
+      - name: vendor
+        description: Suppliers we buy finished goods from.
+        columns:
+          - name: businessentityid
+            description: Vendor primary key.
+            tests: [not_null, unique]
+
+      - name: productvendor
+        description: Which vendors supply which products, with lead time and cost.
+        columns:
+          - name: productid
+            description: FK to production.product.
+            tests:
+              - not_null
+              - relationships:
+                  to: source('production', 'product')
+                  field: productid
+          - name: businessentityid
+            description: FK to purchasing.vendor.
+            tests:
+              - not_null
+              - relationships:
+                  to: source('purchasing', 'vendor')
+                  field: businessentityid
+
+      - name: purchaseorderheader
+        description: Inbound purchase-order headers (one per PO raised on a vendor).
+        columns:
+          - name: purchaseorderid
+            description: Purchase-order primary key.
+            tests: [not_null, unique]
+          - name: vendorid
+            description: FK to purchasing.vendor.
+            tests:
+              - not_null
+              - relationships:
+                  to: source('purchasing', 'vendor')
+                  field: businessentityid
+
+      - name: purchaseorderdetail
+        description: Inbound purchase-order line items.
+        columns:
+          - name: purchaseorderdetailid
+            description: Line-item primary key (identity, unique on its own).
+            tests: [not_null, unique]
+          - name: purchaseorderid
+            description: FK to purchasing.purchaseorderheader.
+            tests:
+              - not_null
+              - relationships:
+                  to: source('purchasing', 'purchaseorderheader')
+                  field: purchaseorderid
+          - name: productid
+            description: FK to production.product.
+            tests:
+              - not_null
+              - relationships:
+                  to: source('production', 'product')
+                  field: productid
+
+  # ---------------------------------------------------------------------------
+  # WAREHOUSE — products, stock on hand, locations, stock movements
+  # ---------------------------------------------------------------------------
+  - name: production
+    schema: production
+    description: Warehouse — product catalogue, on-hand inventory and the stock-movement ledger.
+    tables:
+      - name: product
+        description: Product / SKU master.
+        columns:
+          - name: productid
+            description: Product primary key.
+            tests: [not_null, unique]
+
+      - name: location
+        description: Warehouse locations / bins where stock is held.
+        columns:
+          - name: locationid
+            description: Location primary key.
+            tests: [not_null, unique]
+
+      - name: productinventory
+        description: On-hand quantity of each product at each location (composite key).
+        columns:
+          - name: productid
+            description: FK to production.product.
+            tests:
+              - not_null
+              - relationships:
+                  to: source('production', 'product')
+                  field: productid
+          - name: locationid
+            description: FK to production.location.
+            tests:
+              - not_null
+              - relationships:
+                  to: source('production', 'location')
+                  field: locationid
+
+      - name: transactionhistory
+        description: >
+          Append-only stock-movement ledger (Purchase / Sales / Work-order).
+          This is the source for the Phase 3 incremental model.
+        # --- Source-freshness example (left disabled deliberately; static data) ---
+        # loaded_at_field: modifieddate
+        # freshness:
+        #   warn_after: {count: 30, period: day}
+        #   error_after: {count: 60, period: day}
+        columns:
+          - name: transactionid
+            description: Movement primary key.
+            tests: [not_null, unique]
+          - name: productid
+            description: FK to production.product.
+            tests:
+              - not_null
+              - relationships:
+                  to: source('production', 'product')
+                  field: productid
+
+      - name: productlistpricehistory
+        description: >
+          Dated list-price changes per product (natural SCD source for the
+          Phase 3 snapshot). Composite key (productid, startdate).
+        columns:
+          - name: productid
+            description: FK to production.product.
+            tests:
+              - not_null
+              - relationships:
+                  to: source('production', 'product')
+                  field: productid
+          - name: startdate
+            description: Date this price became effective.
+            tests: [not_null]
+
+  # ---------------------------------------------------------------------------
+  # OUTBOUND — selling on to retailer customers
+  # ---------------------------------------------------------------------------
+  - name: sales
+    schema: sales
+    description: Outbound sales — customers and the sales orders we ship to them.
+    tables:
+      - name: customer
+        description: Retailer / reseller customers we sell to.
+        columns:
+          - name: customerid
+            description: Customer primary key.
+            tests: [not_null, unique]
+
+      - name: salesorderheader
+        description: Outbound sales-order headers.
+        columns:
+          - name: salesorderid
+            description: Sales-order primary key.
+            tests: [not_null, unique]
+          - name: customerid
+            description: FK to sales.customer.
+            tests:
+              - not_null
+              - relationships:
+                  to: source('sales', 'customer')
+                  field: customerid
+
+      - name: salesorderdetail
+        description: Outbound sales-order line items.
+        columns:
+          - name: salesorderdetailid
+            description: Line-item primary key (identity, unique on its own).
+            tests: [not_null, unique]
+          - name: salesorderid
+            description: FK to sales.salesorderheader.
+            tests:
+              - not_null
+              - relationships:
+                  to: source('sales', 'salesorderheader')
+                  field: salesorderid
+          - name: productid
+            description: FK to production.product.
+            tests:
+              - not_null
+              - relationships:
+                  to: source('production', 'product')
+                  field: productid
