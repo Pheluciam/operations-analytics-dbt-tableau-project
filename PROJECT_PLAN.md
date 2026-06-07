@@ -110,11 +110,36 @@ Phase 2 forward-verify decisions (banked 2026-06-08, see LEARNINGS Risks M1-6/7/
   `generate_surrogate_key(['…'])` for fact/dim surrogate keys rather than hand-rolling.
 - Staging = `view`; warehouse/marts = `table` (dbt_project.yml per-folder defaults).
 
-**Phase 3 — dbt depth (the lead theme).**
+**Phase 3 — dbt depth (the lead theme). ✅ (2026-06-08)** Reusable macro
+(extended_amount); 2 custom generic tests from scratch (not_negative,
+at_or_below_column); dbt-utils (unique_combination_of_columns) + dbt-expectations
+(expect_column_values_to_be_between) applied; incremental fct_stock_movements
+(delete+insert, idempotent no-op verified); snapshot snap_product_list_price
+(timestamp SCD2, 395 rows). Full `dbt build` = 147 PASS / 0 ERROR.
 - Custom generic test(s) authored from scratch.
 - dbt-utils + dbt-expectations tests applied across models.
 - One reusable macro.
 - One incremental model. One snapshot if time.
+
+Phase 3 forward-verify decisions (banked 2026-06-08, see LEARNINGS Risks M1-9..13):
+- dbt-expectations: pin `metaplane/dbt_expectations: 0.10.10` (canonical namespace,
+  not the stale `calogica` path); require-dbt-version `>=1.7.0,<3.0.0` = compatible
+  with dbt-core 1.11.8. Its only dependency is `godatadriven/dbt_date` (`>=0.9.0,<1.0.0`)
+  — NO dbt-utils pin, so no conflict with our pinned dbt_utils 1.3.3. Pin dbt_date
+  explicitly too for deterministic deps; resolved set = {dbt_utils 1.3.3,
+  dbt_expectations 0.10.10, dbt_date 0.x}.
+- Incremental (transactionhistory): `materialized='incremental'`,
+  `incremental_strategy='delete+insert'`, `unique_key='transactionid'`, with an
+  `is_incremental()` watermark on the dated column. dbt-postgres now supports
+  append/merge/delete+insert/microbatch (PG18 native MERGE); delete+insert chosen for
+  the idempotency safety net (Eng Standards #8) over append (no dup protection).
+- Snapshot (productlistpricehistory): YAML snapshot in `snapshots/` (the current form
+  since dbt 1.9, not the legacy `{% snapshot %}` block), `strategy='timestamp'`,
+  `updated_at=modifieddate`, composite `unique_key` (productid + start-of-validity).
+  Confirm exact columns against information_schema at build time.
+- Custom generic tests: author from scratch in `tests/generic/`; invoke args under the
+  `arguments:` property (top-level kwargs deprecated) — continuous with the Phase 2
+  relationships-test migration.
 
 **Phase 4 — Tableau Public.** Connect Tableau to the Postgres marts (or an extract),
 build the operations workbook (inventory/throughput/supplier/customer views), publish

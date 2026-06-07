@@ -17,6 +17,10 @@ models:
 
   - name: stg_purchasing__product_vendor
     description: Which vendor supplies which product, with lead time and cost terms.
+    tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [product_id, vendor_id]
     columns:
       - name: product_id
         tests: [not_null]
@@ -56,6 +60,10 @@ models:
 
   - name: stg_production__product_inventory
     description: On-hand quantity of each product at each location.
+    tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [product_id, location_id]
     columns:
       - name: product_id
         tests: [not_null]
@@ -76,6 +84,10 @@ models:
     description: >
       Dated list-price changes per product. Natural SCD source for the Phase 3
       snapshot. Grain: (product_id, start_date).
+    tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [product_id, start_date]
     columns:
       - name: product_id
         tests: [not_null]

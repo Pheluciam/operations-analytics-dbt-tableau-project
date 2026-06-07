@@ -45,8 +45,8 @@ final AS (
         order_qty,
         unit_price,
         unit_price_discount,
-        order_qty * unit_price AS gross_amount,
-        order_qty * unit_price * (1 - unit_price_discount) AS net_amount
+        {{ extended_amount('order_qty', 'unit_price') }} AS gross_amount,
+        {{ extended_amount('order_qty', 'unit_price', 'unit_price_discount') }} AS net_amount
     FROM joined
 )
 

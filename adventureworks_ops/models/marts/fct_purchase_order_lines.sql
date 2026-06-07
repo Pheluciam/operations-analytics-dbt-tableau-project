@@ -45,7 +45,7 @@ final AS (
         unit_price,
         received_qty,
         rejected_qty,
-        order_qty * unit_price AS line_amount,
+        {{ extended_amount('order_qty', 'unit_price') }} AS line_amount,
         received_qty - rejected_qty AS stocked_qty
     FROM joined
 )

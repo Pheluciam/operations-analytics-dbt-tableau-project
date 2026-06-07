@@ -1,0 +1,11 @@
+# SCD2 snapshot of the product list-price history (Phase 3).
+# YAML snapshot form (dbt 1.9+); timestamp strategy watches modified_date.
+# Grain is (product_id, start_date), so the unique_key is a cast concatenation
+# of both. Built into the default analytics schema (no schema concatenation).
+snapshots:
+  - name: snap_product_list_price
+    relation: ref('stg_production__product_list_price_history')
+    config:
+      strategy: timestamp
+      unique_key: "product_id::text || '-' || start_date::text"
+      updated_at: modified_date

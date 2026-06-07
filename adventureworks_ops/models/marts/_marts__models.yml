@@ -65,6 +65,16 @@ models:
               arguments:
                 to: ref('dim_vendor')
                 field: vendor_key
+      - name: order_qty
+        tests: [not_negative]
+      - name: unit_price
+        tests: [not_negative]
+      - name: received_qty
+        tests: [not_negative]
+      - name: rejected_qty
+        tests: [not_negative]
+      - name: line_amount
+        tests: [not_negative]
 
   - name: fct_sales_order_lines
     description: Grain = one outbound sales-order line.
@@ -85,6 +95,24 @@ models:
               arguments:
                 to: ref('dim_customer')
                 field: customer_key
+      - name: order_qty
+        tests: [not_negative]
+      - name: unit_price
+        tests: [not_negative]
+      - name: gross_amount
+        tests: [not_negative]
+      - name: unit_price_discount
+        tests:
+          - dbt_expectations.expect_column_values_to_be_between:
+              arguments:
+                min_value: 0
+                max_value: 1
+      - name: net_amount
+        tests:
+          - not_negative
+          - at_or_below_column:
+              arguments:
+                compare_column: gross_amount
 
   - name: fct_stock_movements
     description: Grain = one stock-movement ledger entry (P/S/W).

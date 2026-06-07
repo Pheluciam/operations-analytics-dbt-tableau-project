@@ -28,14 +28,14 @@ published to Tableau Public. Mini #1 of 3. Target ~4-5 days.
   survives any dataset pivot at the gate). Never renamed mid-project.
 - Out of scope: dbt Cloud CI/CD (training journey wk 7), Power BI.
 
-## Open / pending (Phase 3 — dbt depth: the lead theme, NOT started)
+## Open / pending (Phase 4 — Tableau Public, NOT started)
 
-- Custom generic test(s) authored from scratch.
-- dbt-utils (already installed, pinned 1.3.3) + dbt-expectations tests across models.
-- One reusable macro.
-- One incremental model (transactionhistory). One snapshot (productlistpricehistory)
-  if time.
-- Tableau Public account: still to confirm before Phase 4 (not needed yet).
+Phase 3 (dbt depth) DONE 2026-06-08 — see Session 4 log. Full dbt build = 147 PASS /
+0 ERROR.
+
+- Connect Tableau Public to the Postgres marts (or an extract); build the operations
+  workbook; publish; embed the live link in README.
+- Tableau Public account: confirm before starting Phase 4.
 
 ## Working rules (this mini)
 
@@ -121,3 +121,45 @@ published to Tableau Public. Mini #1 of 3. Target ~4-5 days.
 - TODO carry-forward: rotate the Postgres password (it was shown on screen during setup).
 - Next session starts at: Phase 3 (dbt depth — custom generic tests, dbt-utils +
   dbt-expectations, reusable macro, incremental + snapshot).
+
+### Session 4 — 2026-06-08 — Phase 3 build (dbt depth — the lead theme) — CLOSED
+- Ran the Phase 3 forward-verify pass (engine-docs-first: docs.getdbt.com +
+  hub.getdbt.com). Banked Risks M1-9..13 in LEARNINGS; baked decisions into
+  PROJECT_PLAN Phase 3. Key result: feared dbt-utils conflict RETIRED —
+  dbt-expectations 0.10.10 depends only on godatadriven/dbt_date, not dbt-utils.
+- Packages: pinned metaplane/dbt_expectations 0.10.10 + godatadriven/dbt_date
+  (resolved 0.18.0) in packages.yml; dbt_utils 1.3.3 retained. dbt deps clean,
+  no conflict. NOTE canonical dbt-expectations namespace is metaplane, not calogica.
+- Reusable macro: extended_amount() centralises the qty*price (+ optional discount)
+  line rule; wired into fct_sales_order_lines (gross + net) and
+  fct_purchase_order_lines (line_amount), removing 3 hand-written copies. Compiled
+  SQL identical — fact values unchanged (verified by targeted build).
+- Custom generic tests authored from scratch in tests/generic/: not_negative
+  (applied to 9 qty/money columns across the two line facts) and at_or_below_column
+  (net_amount <= gross_amount on sales). Args via the dbt 1.11 arguments: nesting.
+- Package tests applied: dbt_utils.unique_combination_of_columns on the 3
+  composite-grain staging models (product_vendor, product_inventory,
+  price_history); dbt_expectations.expect_column_values_to_be_between on
+  unit_price_discount (0-1).
+- Incremental model: converted fct_stock_movements to materialized=incremental,
+  incremental_strategy=delete+insert, unique_key=transaction_id, is_incremental()
+  watermark on transaction_date. dbt-postgres supports append/merge/delete+insert/
+  microbatch (PG18 native MERGE). Verified idempotent: full-refresh base then
+  incremental no-op = 113,443 rows unchanged, zero duplication.
+- Snapshot: snap_product_list_price.yml (YAML form, dbt 1.9+), timestamp strategy on
+  modified_date, composite unique_key (product_id::text || '-' || start_date::text),
+  default analytics schema (no schema concatenation). 395 rows, all current
+  (dbt_valid_to NULL).
+- Full dbt build = 147 PASS / 0 ERROR / 0 WARN (21 nodes incl. 1 incremental + 1
+  snapshot + 12 views + 7 tables; 126 data tests). 10-criteria audit all PASS;
+  structural audit: 1 finding fixed in-session (git rm 3 stale .gitkeep in
+  macros/tests/snapshots).
+- Auth resolved (was the carry-forward pain): PGPASSWORD wasn't loading in VS Code's
+  integrated terminal because setx/SetEnvironmentVariable(User) writes the registry
+  but does NOT reach already-running processes — VS Code was launched before the save.
+  Fix: SetEnvironmentVariable('PGPASSWORD',pw,'User') + FULL VS Code restart, then
+  verified both session AND permanent store = True. The missing step previously was
+  the VS Code restart. Now automatic for every future terminal this project.
+- Password rotation TODO: Phil declined — dropped from scope.
+- Next session starts at: Phase 4 (Tableau Public). Confirm Tableau Public account
+  first.

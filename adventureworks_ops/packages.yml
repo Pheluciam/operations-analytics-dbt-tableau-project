@@ -1,3 +1,12 @@
 packages:
+  # Surrogate keys + cross-db helpers. Pinned in Phase 2 for generate_surrogate_key.
   - package: dbt-labs/dbt_utils
     version: 1.3.3
+  # Great-Expectations-style generic data tests. Canonical namespace is metaplane
+  # (the calogica path most tutorials cite is no longer the maintained hub entry).
+  - package: metaplane/dbt_expectations
+    version: 0.10.10
+  # dbt_expectations' only dependency. Pinned explicitly (not left transitive) so the
+  # resolved dependency set is deterministic and visible in our own packages.yml.
+  - package: godatadriven/dbt_date
+    version: [">=0.9.0", "<1.0.0"]
