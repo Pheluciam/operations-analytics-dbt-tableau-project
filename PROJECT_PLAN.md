@@ -141,9 +141,52 @@ Phase 3 forward-verify decisions (banked 2026-06-08, see LEARNINGS Risks M1-9..1
   `arguments:` property (top-level kwargs deprecated) — continuous with the Phase 2
   relationships-test migration.
 
-**Phase 4 — Tableau Public.** Connect Tableau to the Postgres marts (or an extract),
-build the operations workbook (inventory/throughput/supplier/customer views), publish
-to Tableau Public, embed the live link in README.
+**Phase 4 — Tableau Public.** Build the operations workbook, publish to Tableau
+Public, embed the live link in README.
+
+Phase 4 dashboard structure (locked 2026-06-08, Phil GO). ONE workbook
+(tableau/adventureworks_operations.twbx) with THREE dashboards as tabs, published once
+= a single live link with three tabs. Three dashboards follow the distribution flow
+(inbound -> warehouse -> outbound), 3-4 vizzes each, covering all 4 facts + 4 dims.
+Rationale: this is Phil's ONLY Tableau deliverable across all 3 minis + 3 majors, so
+the Tableau proof is concentrated here; three dashboards is the upper end of scope but
+acceptable since viz is an existing strength and it doesn't touch the dbt lead theme —
+kept tight, no gold-plating.
+- Dashboard 1 — Outbound: Sales & Customer (source: fct_sales_order_lines + dim_product
+  + dim_customer). Vizzes: monthly net-revenue throughput trend; top products by net
+  sales; sales by customer type; online vs in-person order mix; KPI tiles (total net
+  sales, order count, avg order value).
+- Dashboard 2 — Inbound: Supplier & Purchasing (source: fct_purchase_order_lines +
+  dim_product + dim_vendor). Vizzes: PO spend over time; top vendors by spend; purchase
+  volume by product line; spend concentration (Pareto).
+- Dashboard 3 — Warehouse: Inventory & Stock Movement (sources: fct_product_inventory +
+  fct_stock_movements + dim_product + dim_location). Vizzes: inventory on hand by
+  location; stock by product line; stock movements over time by type; items at/below
+  reorder point.
+- Session split: Session 5 = Dashboard 1 + bundled commit. Session 6 = Dashboard 2.
+  Session 7 = Dashboard 3 + publish all three + embed live link in README + Phase 4
+  structural audit + final commit. Phase 5 (Ship) then = walkthrough doc + screen
+  recording polish.
+
+Phase 4 forward-verify decisions (banked 2026-06-08, see LEARNINGS Risks M1-14..18):
+- Connection path is NOT direct-to-Postgres. Tableau Desktop PUBLIC EDITION has no
+  database connector (file/Google Drive/OData/WDC only) and Tableau Public publishes
+  EXTRACTS only, never live connections (Risks M1-14/M1-15). Path: export the 8 dbt
+  marts from the analytics schema to one CSV per mart under tableau/data/ (idempotent
+  drop-and-recreate + row-count parity verify per Eng Standards #8/#9), connect Public
+  Edition to the CSVs, rebuild the star via Tableau data-model relationships on the
+  existing surrogate keys, publish (Public extracts to .hyper at publish time).
+- REJECTED: building in the Professional 14-day trial's live Postgres connector then
+  publishing the extract — fragile/non-reproducible, breaks the "Public is the
+  portfolio artefact" lock.
+- Scale is a non-issue: ~250K rows across all marts vs the 15M-row/workbook cap and
+  10 GB profile storage (Risk M1-16); CSVs are a few MB, well under GitHub's 100 MB
+  per-file limit. Aggregate marks for clarity/performance by choice, not by cap.
+- README live link = Share-icon viz URL (embed code only if a richer landing page is
+  built later); leave viewer download ON (public sample data + reinforces the
+  explain-any-line portfolio posture); note the ad-blocker thumbnail caveat (Risk
+  M1-18). Tableau Public account is the only human prerequisite — confirm before
+  publish; no driver/admin install needed for the file-based path.
 
 **Phase 5 — Ship.** README (with AI-assistance disclosure block), DBT_PIPELINE.md
 walkthrough, screen recording, bundled commit + push. Bank LEARNINGS entries.

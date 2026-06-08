@@ -163,3 +163,43 @@ Phase 3 (dbt depth) DONE 2026-06-08 — see Session 4 log. Full dbt build = 147 
 - Password rotation TODO: Phil declined — dropped from scope.
 - Next session starts at: Phase 4 (Tableau Public). Confirm Tableau Public account
   first.
+
+### Session 5 — 2026-06-08 — Phase 4 start (Dashboard 1 — Outbound: Sales & Customer) — CLOSED
+- Ran the Phase 4 kickoff forward-verify pass (help.tableau.com). Banked Risks
+  M1-14..18 in LEARNINGS; mitigations baked into PROJECT_PLAN Phase 4. KEY finding
+  (M1-14, confirmed live in the app): Tableau Desktop PUBLIC EDITION has NO database
+  connector (file/Google Drive/OData/WDC only) and Public publishes EXTRACTS only.
+  So "connect to the marts" is impossible — the path is dbt marts -> CSV -> Public.
+- Tableau Public account: confirmed (Phil's pre-existing account still active, signed
+  in). Installed Tableau Public Desktop Edition 2026.1.
+- Data handoff: authored sql/export/01_export_marts_to_csv.sql (psql \copy, idempotent
+  drop-and-recreate, run from project root with -U postgres). Exported all 8 marts to
+  tableau/data/*.csv; verified row-count parity CSV-vs-COPY on every file (sales
+  121317, stock 113443, PO 8845, inventory 1069, dims 504/104/19820/14). ~38 MB total,
+  largest 22 MB (under GitHub 100 MB).
+- Dashboard structure LOCKED (Phil GO): ONE workbook, THREE dashboards as tabs,
+  published once = one live link. Sessions 5/6/7 = Dashboard 1/2/3. Rationale: this is
+  the ONLY Tableau deliverable across all minis+majors, so concentrate the proof here.
+- Built the sales data source: fct_sales_order_lines related to dim_product (Product
+  Key) + dim_customer (Customer Key); cardinality Many->One + referential integrity
+  All->Some set explicitly (verified by the dbt unique/relationships tests).
+- Dashboard 1 (Outbound: Sales & Customer): 5 KPI tiles (Net Sales 109.8M, Units Sold
+  274,914, Orders 31,465, Avg Order Value 3,491, Customers 19,119) + Throughput
+  (monthly net revenue) + Top Products + Sales by Product Line + Sales by Customer Type.
+  Calc field Product Line (label) handles padded category codes (TRIM) + maps R/M/T/S
+  -> Road/Mountain/Touring/Standard + NULL -> "Components / Other". Year filter applied
+  to all worksheets on the source.
+- Styling pass (Claude drove via computer-use, Phil finished): teal throughput line
+  (thicker), categorical Product Line, themed bars, KPI numbers 20pt with orange labels,
+  container-based layout (Horizontal KPI row + Throughput band + Horizontal chart row).
+- Saved canonical tableau/adventureworks_operations.twbx + _SAFETY copy (gitignored via
+  tableau/*_SAFETY.twbx). .gitignore also ignores *.twbr recovery files.
+- Trailing partial month (June 2014, 2,130 lines vs May 8,626) trimmed from the trend
+  via a worksheet-only Order Date exclude (KPI totals unchanged at 109.8M). Trend
+  worksheet renamed Throughput -> Monthly Net Sales (it plots net_amount, not volume).
+  Redundant chart headers removed + axes tidied (Phil).
+- Files this session: sql/export/01_export_marts_to_csv.sql, tableau/data/*.csv (8),
+  tableau/adventureworks_operations.twbx, .gitignore, PROJECT_PLAN.md (Phase 4 block),
+  LEARNINGS.md (M1-14..18, local/gitignored), this log.
+- Next session starts at: Session 6 = Dashboard 2 (Inbound: Supplier & Purchasing) —
+  new data source fct_purchase_order_lines + dim_product + dim_vendor.

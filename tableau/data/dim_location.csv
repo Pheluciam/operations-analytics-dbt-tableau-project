@@ -1,0 +1,15 @@
+location_key,location_id,location_name,cost_rate,availability
+c4ca4238a0b923820dcc509a6f75849b,1,Tool Crib,0,0.00
+c81e728d9d4c2f636f067f89cc14862c,2,Sheet Metal Racks,0,0.00
+eccbc87e4b5ce2fe28308fd9f2a7baf3,3,Paint Shop,0,0.00
+a87ff679a2f3e71d9181a67b7542122c,4,Paint Storage,0,0.00
+e4da3b7fbbce2345d7772b0674a318d5,5,Metal Storage,0,0.00
+1679091c5a880faf6fb5e6087eb1b2dc,6,Miscellaneous Storage,0,0.00
+8f14e45fceea167a5a36dedd4bea2543,7,Finished Goods Storage,0,0.00
+d3d9446802a44259755d38e6d163e820,10,Frame Forming,22.5,96.00
+98f13708210194c475687be6106a3b84,20,Frame Welding,25,108.00
+34173cb38f07f89ddbebc2ac9128303f,30,Debur and Polish,14.5,120.00
+d645920e395fedad7bbbed0eca3fe2e0,40,Paint,15.75,120.00
+6c8349cc7260ae62e3b1396831a8398f,45,Specialized Paint,18,80.00
+c0c7c76d30bd3dcaefc96f40275bdc0a,50,Subassembly,12.25,120.00
+072b030ba126b2f4b2374f342be9ed44,60,Final Assembly,12.25,120.00

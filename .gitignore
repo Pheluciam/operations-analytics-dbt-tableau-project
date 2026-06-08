@@ -18,6 +18,13 @@ dbt_packages/
 .DS_Store
 .vscode/
 
+# Tableau — commit only the canonical PACKAGED workbook (.twbx, self-contained).
+# Plain .twb stores ABSOLUTE data paths (not portable), so ignore .twb working files,
+# all _SAFETY copies (any extension), and .twbr recovery files.
+tableau/*_SAFETY.*
+tableau/*.twb
+*.twbr
+
 # Personal / cross-project carry-forward files — kept local, NOT for the public repo
 LEARNINGS.md
 LEARNING_ROADMAP.md
