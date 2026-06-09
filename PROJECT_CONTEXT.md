@@ -245,3 +245,81 @@ Phase 3 (dbt depth) DONE 2026-06-08 — see Session 4 log. Full dbt build = 147 
 - Next session starts at: Session 7 = Dashboard 3 (Warehouse: Inventory & Stock Movement)
   + publish all three tabs + embed live link in README + Phase 4 structural audit +
   final bundled commit.
+
+### Session 7 — 2026-06-09 — Phase 4 cont. (Dashboard 3 — Warehouse: Inventory & Stock Movement) — CLOSED
+- Built the two D3 data sources: Inventory (fct_product_inventory + dim_product +
+  dim_location; relate on Product Key + Location Key, Many->One, All->Some) and Stock
+  Movements (fct_stock_movements + dim_product on Product Key, Many->One, All->Some).
+  Two sources by design, not one: the two facts are at different grains and both join
+  dim_product, so one source would fan-out/inflate. Side effect documented: the Location
+  filter cannot touch the movements trend (fct_stock_movements has no location column).
+  Also renamed the D1 source fct_sales_order_lines -> "Sales" for naming consistency
+  (Sales / Purchasing / Inventory / Stock Movements).
+- LOCKED-LAYOUT CHANGE (forced by the data, Phil GO): the "map hero" in the locked D3
+  layout is impossible — dim_location's 14 rows are internal warehouse/manufacturing
+  zones (Tool Crib, Subassembly, Final Assembly, Paint Shop, Finished Goods Storage...),
+  not geographic places; no lat/long, won't geocode. Replaced the map with an
+  Inventory-by-Zone TREEMAP (tile size + colour = on-hand qty). Treemap chosen over
+  ranked bars / heatmap as the most differentiated hero. On-hand is genuinely lopsided
+  (Subassembly 95,477; Misc Storage 83,173; Tool Crib 72,899 ... Paint Storage 110).
+- 9 calcs authored (8 on Inventory, 1 on Stock Movements). Inventory: Product Line
+  (label) [reused R/M/T/S->Road/Mountain/Touring/Standard + NULL->Components/Other, TRIM
+  for padded codes], On Hand Qty (later renamed labels), SKUs On Hand (COUNTD product),
+  Active Zones (COUNTD location), On Hand per Product + Reorder Point per Product (FIXED
+  [Product Key] LODs), Below Reorder? + Items Below Reorder, and Reorder Status (Below /
+  Near = within 20% above / OK). Stock Movements: Movement Type (P/S/W -> Purchase / Sale
+  / Work order) — but the raw "Stock Movement Type" field already carried those labels
+  from the dbt model, so that field was used directly. Numeric measures defaulted to 0dp
+  thousands-separator number format.
+- 5 worksheets + 4 KPI tiles. Reorder Alerts panel: horizontal bars of On Hand per
+  Product for at-risk items, grouped by Reorder Status (red Below / amber Near), with a
+  CELL-SCOPED reference line (Reorder Point per Product, MIN) drawing each item's reorder
+  threshold per bar — shows proximity to reorder at a glance.
+- Final D3 layout = differentiated from the D1/D2 twins: LEFT full-height KPI rail
+  (Stock On Hand 335,974 / SKUs 432 / Active Zones 14 / Below Reorder 8) + 2x2 grid
+  (Movements top-left, Stock by Product Line top-right, Reorder Alerts bottom-left,
+  Inventory treemap bottom-right) + Location Name filter. Title "Warehouse: Inventory &
+  Stock Movement" / subtitle "On-hand, reorder & stock movement · 2013-2014".
+- DASHBOARD-ASSEMBLY PAIN (banked in LEARNINGS): Tableau Desktop CANNOT drag-reorder
+  tiled items in the Layout item hierarchy (that is Cloud/Server only). Dropping sheets
+  onto the bare canvas or pre-building empty nested containers spawns stray auto-"Tiled"
+  wrapper containers and mis-nests. What worked (Claude drove via computer-use after
+  repeated instruction failures): set size first, then build RAIL-FIRST (stack the 4 KPIs
+  into a full-height vertical), drop Movements to its right (split), then split the right
+  cell into the 2x2. Two drop rules: tile cleanly by releasing hard against the target's
+  boundary (with a dwell); split an INNER cell (not the outer container) by releasing in
+  that cell's directional zone AWAY from the outer edge. Right-edge drops float unless
+  released within ~3px of the boundary.
+- Trend trim: excluded BOTH partial ends of Stock Movements via a worksheet Transaction
+  Date range filter 1 Aug 2013 - 31 Jul 2014 (July 2013 = 1 day / the 31st; Aug 2014 =
+  3 days) -> clean 12 full months Aug 2013 - Jul 2014. KPI totals unaffected (Inventory
+  source). Verified monthly row/day counts from the CSV.
+- DATA CHARACTERISTIC surfaced by Phil + DECISION: D3's movement history is only ~Aug
+  2013 - Jul 2014 because fct_stock_movements derives from AdventureWorks
+  Production.TransactionHistory — a rolling ~1-year live ledger; older movements live in
+  Production.TransactionHistoryArchive, which was EXCLUDED from the Phase-0/1 slice as
+  out-of-scope for the dbt-technique goal (it added rows, not technique, under the
+  "tiny/clean slice" guardrail). Sales (2011-05->2014-06) and PO (2011-04->2014-09) keep
+  full history, hence the mismatch. The miss was not flagging this trade-off when D3 was
+  designed. DECISION (Phil GO, deferred to next session): UNION
+  TransactionHistoryArchive into the stock-movements model (identical schema, transaction
+  IDs don't overlap, incremental logic holds) -> rebuild + re-test + re-export CSV +
+  refresh extract -> D3 trend extends to ~2011-2014, consistent with D1/D2. Only
+  fct_stock_movements is affected; Sales / PO / inventory-snapshot are untouched (different
+  source tables; inventory is point-in-time, no time axis).
+- TEACHING_PREFERENCES updated this session: FOURTH re-lock (2026-06-09) — three standing
+  rules consolidated after drift in this build session: (1) name the table AND data source
+  for every field/step, always; (2) zero inline code in chat, plain text only; (3) bullets
+  by default with indented sub-bullets for hierarchy.
+- Files this session: tableau/adventureworks_operations.twbx (D3 added; canonical only —
+  SAFETY copy gitignored), TEACHING_PREFERENCES.md (FOURTH re-lock), PROJECT_PLAN.md (D3
+  map->treemap + archive next-session task), PROJECT_CONTEXT.md (this log), LEARNINGS.md
+  (Tableau-assembly + archive-gap entries, local/gitignored).
+- NOT done (carried to next session): union TransactionHistoryArchive; FULL formatting
+  pass across D1 + D2 + D3 (consistency + polish, incl. "Final Assembly" treemap label);
+  publish all 3 tabs to Tableau Public + live link; README live link + ad-blocker caveat +
+  movement-history note; Phase 4 structural audit; Phase 5 ship (DBT_PIPELINE.md +
+  recording).
+- Next session starts at: Session 8 = TransactionHistoryArchive union (rebuild/re-test/
+  re-export/refresh) -> full D1/D2/D3 formatting pass -> publish -> README -> Phase 4
+  structural audit -> Phase 5 ship + final bundled commit.

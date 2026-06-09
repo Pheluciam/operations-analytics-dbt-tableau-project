@@ -170,6 +170,21 @@ kept tight, no gold-plating.
     reorder = operational, not just analytical); two compact charts bottom row (stock by
     product line, stock movements over time by P/S/W type); primary filter is LOCATION, not
     Year. D1/D2 stay matched twins (sell vs buy). Phil may tweak details while building.
+  - BUILT 2026-06-09 (Session 7) WITH TWO CHANGES TO THE LOCK:
+    1. MAP -> TREEMAP. dim_location is 14 internal warehouse/manufacturing zones (Tool
+       Crib, Subassembly, Final Assembly, ...), not geographic places — no lat/long, won't
+       geocode, so a map is impossible. Hero replaced with an Inventory-by-Zone TREEMAP
+       (tile size + colour = on-hand qty). Reorder-alert panel moved to bottom-left and the
+       treemap to bottom-right per Phil's quadrant arrangement; KPI rail stayed left-vertical.
+    2. STOCK-MOVEMENT HISTORY GAP -> ARCHIVE UNION (NEXT SESSION). fct_stock_movements
+       derives from Production.TransactionHistory (rolling ~1-yr live ledger: Aug 2013 -
+       Jul 2014 after partial-month trim), so D3's trend is far shorter than D1 sales
+       (2011-2014) and D2 PO (2011-2014). Older movements live in
+       Production.TransactionHistoryArchive, excluded from the Phase-0/1 slice. DECISION
+       (Phil GO): next session UNION the archive into the stock-movements model (identical
+       schema, non-overlapping IDs, incremental logic holds) -> rebuild + re-test +
+       re-export CSV + refresh extract -> D3 trend ~2011-2014, consistent with D1/D2. Only
+       fct_stock_movements changes; Sales / PO / inventory-snapshot untouched.
 - Session split: Session 5 = Dashboard 1 + bundled commit. Session 6 = Dashboard 2.
   Session 7 = Dashboard 3 + publish all three + embed live link in README + Phase 4
   structural audit + final commit. Phase 5 (Ship) then = walkthrough doc + screen
