@@ -163,6 +163,13 @@ kept tight, no gold-plating.
   fct_stock_movements + dim_product + dim_location). Vizzes: inventory on hand by
   location; stock by product line; stock movements over time by type; items at/below
   reorder point.
+  - LAYOUT DIFFERENTIATED (locked 2026-06-09, Session 6, Phil GO) — deliberately breaks
+    the D1/D2 twin mould so the set isn't three of the same: KPIs move to a LEFT VERTICAL
+    RAIL (not a top strip); a MAP (inventory on hand by location, via dim_location) is the
+    hero top-left; a REORDER-POINT ALERT PANEL top-right (red/amber rows for items at/below
+    reorder = operational, not just analytical); two compact charts bottom row (stock by
+    product line, stock movements over time by P/S/W type); primary filter is LOCATION, not
+    Year. D1/D2 stay matched twins (sell vs buy). Phil may tweak details while building.
 - Session split: Session 5 = Dashboard 1 + bundled commit. Session 6 = Dashboard 2.
   Session 7 = Dashboard 3 + publish all three + embed live link in README + Phase 4
   structural audit + final commit. Phase 5 (Ship) then = walkthrough doc + screen

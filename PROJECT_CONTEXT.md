@@ -203,3 +203,45 @@ Phase 3 (dbt depth) DONE 2026-06-08 — see Session 4 log. Full dbt build = 147 
   LEARNINGS.md (M1-14..18, local/gitignored), this log.
 - Next session starts at: Session 6 = Dashboard 2 (Inbound: Supplier & Purchasing) —
   new data source fct_purchase_order_lines + dim_product + dim_vendor.
+
+### Session 6 — 2026-06-09 — Phase 4 cont. (Dashboard 2 — Inbound: Supplier & Purchasing) — CLOSED
+- Mini forward-verify for D2: the only new technique was a Pareto (dual-axis bar +
+  cumulative-% table calc) — an in-app viz pattern, NOT a Public-platform behaviour, so
+  no new risk beyond M1-14..18. Confirmed, nothing banked.
+- Built the Purchasing data source: fct_purchase_order_lines related to dim_product
+  (Product Key) + dim_vendor (Vendor Key); cardinality Many->One, referential integrity
+  All->Some — matches the dbt unique/relationships tests. Renamed source "Purchasing".
+- Dashboard 2 (Inbound - Supplier & Purchasing): 5 KPI tiles (PO Spend 63.79M, Units
+  Purchased 2,348,637, Purchase Orders 4,012, Avg PO Value 15,900, Vendors 86 — Avg ties
+  out: 63.79M/4,012 = 15,900) + Monthly PO Spend trend + Top Vendors by Spend (top-10
+  set via Line Amount Sum) + Purchase Volume by Product Line (units) + Spend Concentration.
+- Calcs: Product Line (label) mirrored from D1 (TRIM + R/M/T/S -> Road/Mountain/Touring/
+  Standard, NULL -> "Other" per Phil); Avg PO Value; Total PO Spend / Units Purchased /
+  Purchase Orders / Vendors; Vendor Group (IF [Top 10 Vendor Set] THEN "Top 10 vendors"
+  ELSE "Other vendors").
+- Trend trim: excluded trailing partial months Aug + Sep 2014. Verified against the CSV —
+  Aug 2014 = 104 lines across only 3 dates (Aug 1-3), Sep = 2 lines (Sep 22); last FULL
+  month = July 2014 (904 lines, $6.82M). KPI totals stay on the full dataset (cosmetic
+  trim only), same approach as D1 (whose sales partial was June 2014). Each fact trimmed
+  to its OWN last full month — consistency is the method, not a shared calendar cut.
+- Pareto built + styled (Classic 10 green/orange) but did NOT fit a 1/3 tile (dual $/%
+  axes need width). Attempted a 2x2 rearrange via computer-use; Tableau's vertical
+  container resists splitting a full-width tile left/right (every edge resolves to a new
+  row), so the 2x2 fought us. Phil call: REPLACE the Pareto with a 2-slice pie "Spend
+  Concentration" (Top 10 vendors 43% vs Other 76 vendors 57%) — clean at tile size, keeps
+  the concentration insight, and avoids echoing the product-line bars. No dominant vendor
+  (max 7.1%), so a vendor treemap was rejected as a uniform patchwork.
+- Year of PO Date filter applied to ALL worksheets on the Purchasing source; verified all
+  four vizzes update together (2013 test: PO Spend 20.06M, pie 42.72/57.28 ties to the KPI).
+- D3 layout LOCKED in PROJECT_PLAN (Phil GO): differentiated from the D1/D2 twins — left
+  KPI rail, inventory map hero, reorder-point alert panel, Location filter (not Year).
+- Styling: standardised on Tableau Classic 10 (Phil's choice) across categorical marks;
+  teal trend line; orange KPI labels; container layout mirroring D1.
+- Structural audit: tableau/ clean — only canonical .twbx tracked; _SAFETY.*, *.twb,
+  *.twbr gitignored (verified via git check-ignore). Could not byte-introspect the .twbx
+  from the sandbox (stale mount snapshot); verification rests on in-app screenshots + save.
+- Files this session: tableau/adventureworks_operations.twbx (D2 added), PROJECT_PLAN.md
+  (D3 layout lock), PROJECT_CONTEXT.md (this log).
+- Next session starts at: Session 7 = Dashboard 3 (Warehouse: Inventory & Stock Movement)
+  + publish all three tabs + embed live link in README + Phase 4 structural audit +
+  final bundled commit.
