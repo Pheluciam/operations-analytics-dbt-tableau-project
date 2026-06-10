@@ -82,16 +82,6 @@ operations-analytics-dbt-tableau-project/
                                 # DBT_PIPELINE walkthrough, ENGINEERING_STANDARDS
 ```
 
-## Data — pre-flight audit note
-
-The AdventureWorks distribution slice was selected after a two-round pre-flight that
-screened ~12 candidate warehouse/distribution datasets (Northwind, TPC-H, Maven Candy
-Distributor, Olist, Kaggle/UCI sets) against a 6-point gate. It won because it is the
-only clean candidate supplying a complete inbound→warehouse→outbound flow **and** both
-dbt-depth surfaces this mini needs: an append-only stock-movement ledger for the
-incremental model and a dated price history for the snapshot. Full comparison in
-`PREFLIGHT_AUDIT.md`.
-
 ## How this project was built
 
 This project was built using AI-assisted pair programming (Claude by Anthropic).
@@ -146,14 +136,14 @@ lines, and an inventory-by-zone treemap. Location filter on the inventory vizzes
 
 Part of a data-engineering portfolio: three main projects + three mini-projects.
 
+- **Mini #1 — Operations Analytics** *(this one)* — dbt testing + macros depth on
+  PostgreSQL → live Tableau Public three-dashboard workbook.
 - **Project #1 — CDC NT Transport Analytics** — dbt-first pipeline on PostgreSQL →
   Power BI; Kimball modelling foundation.
 - **Project #2 — Retail Demand & Forecasting** — cloud warehouse + orchestration:
   Azure SQL → Snowflake → Airflow (Docker) → dbt → Power BI, with a Cortex forecast layer.
 - **Project #3 — S&P 100 Financial Analytics Lakehouse** — AWS-native lakehouse:
   S3 + Glue + Athena + Iceberg, dbt-athena, Step Functions, 6-page Power BI, keyless OIDC CI/CD.
-- **Mini #1 — Operations Analytics** *(this one)* — dbt testing + macros depth on
-  PostgreSQL → live Tableau Public three-dashboard workbook.
 
 ## Author
 
