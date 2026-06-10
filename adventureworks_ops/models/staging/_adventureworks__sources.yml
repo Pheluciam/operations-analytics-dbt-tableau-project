@@ -154,6 +154,25 @@ sources:
                     to: source('production', 'product')
                     field: productid
 
+      - name: transactionhistoryarchive
+        description: >
+          Archived stock movements older than the rolling ~1-year live ledger
+          (2011-04 to 2013-07, 89,253 rows). Identical schema to
+          transactionhistory; transaction IDs do not overlap. Unioned into
+          fct_stock_movements so the movement trend spans 2011-2014.
+        columns:
+          - name: transactionid
+            description: Movement primary key (does not overlap the live ledger).
+            tests: [not_null, unique]
+          - name: productid
+            description: FK to production.product.
+            tests:
+              - not_null
+              - relationships:
+                  arguments:
+                    to: source('production', 'product')
+                    field: productid
+
       - name: productlistpricehistory
         description: >
           Dated list-price changes per product (natural SCD source for the

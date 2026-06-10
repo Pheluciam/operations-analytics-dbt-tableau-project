@@ -80,6 +80,17 @@ models:
       - name: product_id
         tests: [not_null]
 
+  - name: stg_production__transaction_history_archive
+    description: >
+      Archived stock movements (2011-04 to 2013-07) — the pre-archive of the
+      rolling live ledger. UNION ALLed into fct_stock_movements; IDs do not
+      overlap the live ledger.
+    columns:
+      - name: transaction_id
+        tests: [not_null, unique]
+      - name: product_id
+        tests: [not_null]
+
   - name: stg_production__product_list_price_history
     description: >
       Dated list-price changes per product. Natural SCD source for the Phase 3

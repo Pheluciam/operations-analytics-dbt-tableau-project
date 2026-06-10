@@ -28,14 +28,14 @@ published to Tableau Public. Mini #1 of 3. Target ~4-5 days.
   survives any dataset pivot at the gate). Never renamed mid-project.
 - Out of scope: dbt Cloud CI/CD (training journey wk 7), Power BI.
 
-## Open / pending (Phase 4 — Tableau Public, NOT started)
+## Open / pending
 
-Phase 3 (dbt depth) DONE 2026-06-08 — see Session 4 log. Full dbt build = 147 PASS /
-0 ERROR.
+ALL PHASES COMPLETE (Phase 5 closed 2026-06-10, Session 8). Mini #1 SHIPPED:
+live Tableau Public workbook (link in README) + public GitHub repo + DBT_PIPELINE.md
+walkthrough. Full dbt build = 155 PASS / 0 ERROR. Screen recording dropped from scope
+(Phil call, Session 8): deliverable is for interviews, not public consumption.
 
-- Connect Tableau Public to the Postgres marts (or an extract); build the operations
-  workbook; publish; embed the live link in README.
-- Tableau Public account: confirm before starting Phase 4.
+- Nothing open. Next: mini-project #2 kickoff (separate folder/kickoff doc).
 
 ## Working rules (this mini)
 
@@ -323,3 +323,55 @@ Phase 3 (dbt depth) DONE 2026-06-08 — see Session 4 log. Full dbt build = 147 
 - Next session starts at: Session 8 = TransactionHistoryArchive union (rebuild/re-test/
   re-export/refresh) -> full D1/D2/D3 formatting pass -> publish -> README -> Phase 4
   structural audit -> Phase 5 ship + final bundled commit.
+
+### Session 8 — 2026-06-10 — Phase 4 finish + Phase 5 ship (archive union, publish, docs) — CLOSED
+- ARCHIVE UNION done. Pre-flight verified in-database first (Eng Standards #9): schemas
+  identical (0 mismatched columns), transaction IDs non-overlapping (0), archive =
+  89,253 rows 2011-04-16 -> 2013-07-30. Added transactionhistoryarchive source (+tests),
+  stg_production__transaction_history_archive (1:1 mirror), UNION ALL in
+  fct_stock_movements with the is_incremental() watermark on the unioned set. One-off
+  dbt build --full-refresh REQUIRED (archive rows predate the watermark; a normal
+  incremental run would silently skip them). Full build = 155 PASS / 0 ERROR (was 147;
+  +1 model +7 tests). Fact verified: 202,696 rows (113,443 + 89,253), 2011-04-16 ->
+  2014-08-03. Stock-movements CSV re-exported (single targeted \copy); Tableau extract
+  refreshed; D3 trend filter widened to 1 May 2011 - 31 Jul 2014 (first/last FULL
+  months); D3 subtitle now 2011-2014.
+- Auth detour: psql failed as user "Phil" — NOT the old PGPASSWORD issue; -U postgres
+  was missing from prepared commands (libpq defaults user to the OS login). Permanent
+  fix: PGUSER=postgres set User-scope alongside PGPASSWORD (LEARNINGS M1-24).
+- FORMATTING PASS done across D1/D2/D3. D3: trend renamed Monthly Stock Movements
+  (matches D1/D2 naming), product-line colours matched to the D1/D2 mapping (Mountain
+  blue / Road green / Touring purple / Standard red / Other orange), Reorder Alerts
+  axis unclipped; treemap "Final Assembly" truncation ACCEPTED (tooltip carries it).
+  D1: Top Products axis fixed to include zero (was misleadingly truncated at $2.0M);
+  "Components / Other" renamed "Other" everywhere (Phil call — shorter). Phil's own
+  gradient-trend + multi-colour-bar styling on D1/D2 confirmed as the matched-twin
+  standard (Claude's stale-notes objection withdrawn). Label/tooltip split via
+  duplicate measure (compact $M labels, full-dollar tooltips) on Top Products + Sales
+  by Product Line (M1-23, KB-verified technique).
+- PUBLISHED to Tableau Public. Gotchas banked (M1-22): publish dialog offered no
+  rename (name = filename); Edit Details no longer holds the tabs toggle — Show Sheets
+  as Tabs is behind the GEAR icon on the viz page; first tabs attempt exposed EVERY
+  worksheet -> fixed in Desktop via right-click dashboard tab -> Hide All Sheets (x3)
+  -> re-save to Public (overwrites in place, metadata persists). Renamed to
+  "AdventureWorks Operations", description added (<231 chars). Filter-scope bug found
+  by Phil ON THE LIVE PAGE: D1 Year filter only drove the trend -> Apply to Worksheets
+  -> All Using This Data Source on D1/D3, D2 verified, republished, retested green
+  (M1-25). Viewer download left ON.
+- README: live link (Original-view share URL) + 3 dashboard screenshots embedded
+  (tableau/screenshots/01-03_*.png) + ad-blocker caveat + movement-history one-liner;
+  status block -> Phase 4 complete / 155 PASS. Stale DBT_PG_PASSWORD references purged
+  from README + .env.example (now PGPASSWORD per the locked auth pattern).
+- Phase 4 STRUCTURAL AUDIT: all PASS (canonical .twbx only; SAFETY/.twb/.twbr +
+  personal files gitignored — verified via git status; 8 CSVs; model/YAML pairings;
+  docs current).
+- Phase 5: DBT_PIPELINE.md authored (layer-by-layer walkthrough: sources -> staging ->
+  star -> macro / custom generic tests / packages / incremental + archive union /
+  snapshot -> CSV handoff -> Tableau constraints -> reproduce-from-scratch). README
+  cross-linked. SCREEN RECORDING DROPPED (Phil call: interview-facing, employers won't
+  watch it; not public-facing content). LEARNINGS M1-22..25 banked (local/gitignored).
+- Files this session: adventureworks_ops models (archive source/staging/union + YAMLs),
+  tableau/adventureworks_operations.twbx, tableau/data/fct_stock_movements.csv,
+  tableau/screenshots/ (3 new), README.md, .env.example, DBT_PIPELINE.md (new),
+  PROJECT_CONTEXT.md (this log). One bundled commit + push at close.
+- MINI #1 COMPLETE. Next: mini-project #2 kickoff.

@@ -115,7 +115,10 @@ models:
                 compare_column: gross_amount
 
   - name: fct_stock_movements
-    description: Grain = one stock-movement ledger entry (P/S/W).
+    description: >
+      Grain = one stock-movement ledger entry (P/S/W). Live ledger
+      (transactionhistory) + archive (transactionhistoryarchive) unioned —
+      full movement history 2011-04 to 2014-08.
     columns:
       - name: stock_movement_key
         tests: [not_null, unique]

@@ -4,12 +4,33 @@ Mini-project showcasing **dbt testing + macros depth** on a wholesale warehouse 
 distribution dataset, modelled in **local PostgreSQL** with **dbt-postgres** and
 visualised in **Tableau Public**.
 
-> **Status:** Phase 2 complete — a full dimensional warehouse over the AdventureWorks
-> distribution slice: 12 staging views + an 8-table star (4 conformed dimensions,
-> 4 facts) with hashed surrogate keys and referential-integrity tests. `dbt build`
-> runs 132 tests green with zero deprecations; fact row counts match source exactly.
-> Phase 3 (dbt depth — custom generic tests, dbt-utils + dbt-expectations, a reusable
-> macro, an incremental model and a snapshot) is next.
+> **Status:** Phase 4 complete — the workbook is live on Tableau Public (link below).
+> Full `dbt build` = **155 PASS / 0 ERROR**: 12 staging views + an 8-table star with
+> hashed surrogate keys, custom generic tests, dbt-utils + dbt-expectations packages,
+> a reusable macro, an incremental stock-movements model and a price-history snapshot.
+> Phase 5 (walkthrough doc + screen recording) is next.
+
+## Live dashboards (Tableau Public)
+
+**[AdventureWorks Operations — one workbook, three dashboard tabs](https://public.tableau.com/views/adventureworks_operations/OutboundSalesCustomer?:display_count=n&:origin=viz_share_link)**
+
+Three dashboards follow the distribution flow — **Outbound: Sales & Customer**,
+**Inbound: Supplier & Purchasing**, **Warehouse: Inventory & Stock Movement**.
+Tableau Public has no database connector, so the 8 dbt marts are exported to CSV
+(`tableau/data/`) and the star is rebuilt in Tableau's data model on the existing
+dbt surrogate keys. Viewer download is enabled by design.
+
+Note: some ad-blockers prevent Tableau Public thumbnails/vizzes from rendering —
+allowlist `public.tableau.com` if the link appears blank. Stock movements union the
+live AdventureWorks ledger (`transactionhistory`, a rolling ~1-year window) with
+`transactionhistoryarchive`, extending movement history to 2011–2014 in line with
+sales and purchasing.
+
+![Outbound: Sales & Customer](tableau/screenshots/01_outbound_sales_customer.png)
+
+![Inbound: Supplier & Purchasing](tableau/screenshots/02_inbound_supplier_purchasing.png)
+
+![Warehouse: Inventory & Stock Movement](tableau/screenshots/03_warehouse_inventory_stock_movement.png)
 
 ## Focus (one lead theme, kept tight)
 
@@ -61,7 +82,7 @@ salesorderdetail.
   `install.sql`; the 12-table distribution slice is verified against expected row counts
   by `sql/verify/01_phase1_source_load_verification.sql`.
 - The dbt project lives in `adventureworks_ops/` and connects via `profiles.yml`, with
-  the password injected from the `DBT_PG_PASSWORD` environment variable — no secret in
+  the password injected from the `PGPASSWORD` environment variable — no secret in
   the repo (`.env.example` documents it).
 - Sources for the slice are defined in `models/staging/_adventureworks__sources.yml`
   with `not_null` / `unique` / `relationships` tests across the inbound→warehouse→outbound
@@ -69,9 +90,11 @@ salesorderdetail.
 
 ## Repo docs
 
+- `DBT_PIPELINE.md` — layer-by-layer pipeline walkthrough (start here for the dbt depth).
 - `PROJECT_PLAN.md` — phase plan + locked scope.
 - `PROJECT_CONTEXT.md` — living context + session log.
 - `PREFLIGHT_AUDIT.md` — dataset pre-flight + GO/NO-GO rationale.
+- `ENGINEERING_STANDARDS.md` — the 10-criteria audit + phase-boundary checks applied throughout.
 
 ## How this project was built
 
@@ -80,5 +103,5 @@ All architecture decisions, technology selections, and final design choices are 
 own; the AI accelerated implementation and acted as a senior-DE code reviewer. The
 intent is portfolio learning — every component was built with explicit understanding
 of what it does and why. The dataset pre-flight and design rationale are captured in
-`PREFLIGHT_AUDIT.md` and `PROJECT_PLAN.md`; a `DBT_PIPELINE.md` walkthrough will
-accompany the build.
+`PREFLIGHT_AUDIT.md` and `PROJECT_PLAN.md`; the `DBT_PIPELINE.md` walkthrough
+explains the pipeline layer by layer.

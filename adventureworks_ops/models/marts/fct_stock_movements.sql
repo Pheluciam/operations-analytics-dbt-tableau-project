@@ -2,11 +2,19 @@
 -- transaction_type is P (purchase), S (sales) or W (work order).
 -- cost_amount is the extended cost of the movement.
 --
--- Materialized INCREMENTAL: transactionhistory is an append-only dated ledger, so
--- after the first full load dbt only processes movements on/after the latest
--- transaction_date already present. delete+insert on transaction_id keeps re-runs
--- idempotent (reprocessing the boundary day replaces those rows, never duplicates).
--- Forward-only by design; `dbt build --full-refresh` rebuilds from scratch.
+-- Covers the FULL movement history: the rolling ~1-year live ledger
+-- (transactionhistory) UNION ALL the archive (transactionhistoryarchive,
+-- 2011-04 to 2013-07). Schemas are identical and transaction IDs never
+-- overlap (verified; the unique test on stock_movement_key — derived solely
+-- from transaction_id — re-proves it on every build).
+--
+-- Materialized INCREMENTAL: the ledger is append-only and dated, so after the
+-- first full load dbt only processes movements on/after the latest
+-- transaction_date already present. delete+insert on transaction_id keeps
+-- re-runs idempotent (reprocessing the boundary day replaces those rows,
+-- never duplicates). Forward-only by design — archive rows predate the
+-- watermark, so adding the archive required a one-off
+-- `dbt build --full-refresh`; normal runs stay incremental.
 {{
     config(
         materialized='incremental',
@@ -15,8 +23,16 @@
     )
 }}
 
-WITH movements AS (
+WITH unioned AS (
     SELECT * FROM {{ ref('stg_production__transaction_history') }}
+
+    UNION ALL
+
+    SELECT * FROM {{ ref('stg_production__transaction_history_archive') }}
+),
+
+movements AS (
+    SELECT * FROM unioned
 
     {% if is_incremental() %}
     -- Only the latest slice on incremental runs; delete+insert dedupes the boundary day.
