@@ -28,22 +28,14 @@ live in `PROJECT_CONTEXT.md` and `PROJECT_PLAN.md`.
 
 ## Architecture
 
-```
-AdventureWorks OLTP (local PostgreSQL, native schemas)
-        │  13 source tables declared in dbt (purchasing / production / sales)
-        ▼
-dbt staging — 13 views (stg_*), 1:1 with sources
-        │  snake_case renames, light recasts, no business logic
-        ▼
-dbt marts — 8-table star (analytics schema)
-        │  4 dims + 4 facts · surrogate keys · relationships tests
-        │  fct_stock_movements = INCREMENTAL (live ledger ∪ archive, 2011–2014)
-        ▼
-Snapshot — snap_product_list_price (SCD2)
-        ▼
-CSV export — sql/export (psql \copy, idempotent) → tableau/data/
-        ▼
-Tableau Public — one workbook, three dashboard tabs, one live link
+```mermaid
+flowchart LR
+    SRC[("AdventureWorks OLTP<br/>local PostgreSQL")] -->|"13 dbt sources<br/>purchasing / production / sales"| STG["dbt staging<br/>13 views (stg_*)"]
+    STG -->|"surrogate keys<br/>133 data tests"| STAR[("8-table star<br/>4 dims + 4 facts<br/>fct_stock_movements incremental")]
+    STG -->|"timestamp SCD2"| SNAP["snapshot<br/>snap_product_list_price"]
+    STAR -->|"idempotent CSV export"| CSV[("tableau/data/<br/>8 mart CSVs")]
+    CSV -->|"relationships on<br/>dbt surrogate keys"| TAB["Tableau Desktop<br/>Public Edition"]
+    TAB -->|"publish<br/>.hyper extract"| PUB["Tableau Public<br/>3 dashboards, 1 live link"]
 ```
 
 ## Stack

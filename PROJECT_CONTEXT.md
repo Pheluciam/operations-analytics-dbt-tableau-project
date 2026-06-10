@@ -374,4 +374,12 @@ walkthrough. Full dbt build = 155 PASS / 0 ERROR. Screen recording dropped from 
   tableau/adventureworks_operations.twbx, tableau/data/fct_stock_movements.csv,
   tableau/screenshots/ (3 new), README.md, .env.example, DBT_PIPELINE.md (new),
   PROJECT_CONTEXT.md (this log). One bundled commit + push at close.
+- POST-SHIP ADDENDUM (same day): README rebuilt to the portfolio template (Project #3's
+  README = canonical structure; ASCII architecture diagram — renders where #3's does
+  not; no pre-flight section per Phil; minis listed first under Related projects).
+  GitHub presentation completed: repo About + live-link website + 12 topic tags;
+  profile README gained a Mini Projects section + Tableau Public mention in Stack;
+  repo pinned (P3/P2/P1/mini order). Lesson banked as M1-26: README template parity +
+  GitHub page checklist is part of shipping, every future repo. KNOWN ISSUE elsewhere:
+  Project #3's architecture diagram doesn't render on GitHub — fix in a #3 session.
 - MINI #1 COMPLETE. Next: mini-project #2 kickoff.
