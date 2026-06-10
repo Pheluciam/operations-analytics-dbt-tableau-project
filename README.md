@@ -1,107 +1,163 @@
-# Operations Analytics — dbt depth → Tableau (Warehouse & Distribution)
+# operations-analytics-dbt-tableau-project
 
-Mini-project showcasing **dbt testing + macros depth** on a wholesale warehouse &
-distribution dataset, modelled in **local PostgreSQL** with **dbt-postgres** and
-visualised in **Tableau Public**.
+> Local-stack analytics engineering — AdventureWorks distribution slice → PostgreSQL →
+> dbt (tested 8-table star: custom generic tests, dbt-utils + dbt-expectations, reusable
+> macro, incremental model, snapshot) → live three-dashboard Tableau Public workbook.
+> Mini-project #1 of Phil's data engineering portfolio.
 
-> **Status:** Phase 4 complete — the workbook is live on Tableau Public (link below).
-> Full `dbt build` = **155 PASS / 0 ERROR**: 12 staging views + an 8-table star with
-> hashed surrogate keys, custom generic tests, dbt-utils + dbt-expectations packages,
-> a reusable macro, an incremental stock-movements model and a price-history snapshot.
-> Phase 5 (walkthrough doc + screen recording) is next.
+**Status: COMPLETE — 2026-06-10.** End-to-end and interview-ready: PostgreSQL source →
+dbt warehouse (full `dbt build` = **155 PASS / 0 ERROR**) → CSV mart export →
+**[live Tableau Public workbook](https://public.tableau.com/views/adventureworks_operations/OutboundSalesCustomer?:display_count=n&:origin=viz_share_link)**
+(three dashboards, one link). Full build history, design decisions and the phase plan
+live in `PROJECT_CONTEXT.md` and `PROJECT_PLAN.md`.
 
-## Live dashboards (Tableau Public)
+## What this project demonstrates
 
-**[AdventureWorks Operations — one workbook, three dashboard tabs](https://public.tableau.com/views/adventureworks_operations/OutboundSalesCustomer?:display_count=n&:origin=viz_share_link)**
+- **dbt testing depth** — custom generic tests authored from scratch (`not_negative`,
+  `at_or_below_column`) plus dbt-utils + dbt-expectations package tests; 133 data tests
+- **Reusable macro** (`extended_amount`) centralising the line-amount rule across two facts
+- **Incremental model** — append-only stock-movement ledger, delete+insert strategy,
+  idempotent re-runs, plus a verified UNION of the AdventureWorks archive table
+- **Snapshot (SCD2)** over dated list-price changes (timestamp strategy, YAML form)
+- **Dimensional modelling** — 8-table star with hashed surrogate keys and
+  referential-integrity tests fact → dim
+- **BI under platform constraints** — Tableau Public has no database connector, so the
+  marts ship via an idempotent CSV export and the star is rebuilt in Tableau's data model
+- **Three-dashboard operations suite** following the distribution flow
+  (inbound → warehouse → outbound) on one published link
 
-Three dashboards follow the distribution flow — **Outbound: Sales & Customer**,
-**Inbound: Supplier & Purchasing**, **Warehouse: Inventory & Stock Movement**.
-Tableau Public has no database connector, so the 8 dbt marts are exported to CSV
-(`tableau/data/`) and the star is rebuilt in Tableau's data model on the existing
-dbt surrogate keys. Viewer download is enabled by design.
+## Architecture
 
-Note: some ad-blockers prevent Tableau Public thumbnails/vizzes from rendering —
-allowlist `public.tableau.com` if the link appears blank. Stock movements union the
-live AdventureWorks ledger (`transactionhistory`, a rolling ~1-year window) with
-`transactionhistoryarchive`, extending movement history to 2011–2014 in line with
-sales and purchasing.
+```
+AdventureWorks OLTP (local PostgreSQL, native schemas)
+        │  13 source tables declared in dbt (purchasing / production / sales)
+        ▼
+dbt staging — 13 views (stg_*), 1:1 with sources
+        │  snake_case renames, light recasts, no business logic
+        ▼
+dbt marts — 8-table star (analytics schema)
+        │  4 dims + 4 facts · surrogate keys · relationships tests
+        │  fct_stock_movements = INCREMENTAL (live ledger ∪ archive, 2011–2014)
+        ▼
+Snapshot — snap_product_list_price (SCD2)
+        ▼
+CSV export — sql/export (psql \copy, idempotent) → tableau/data/
+        ▼
+Tableau Public — one workbook, three dashboard tabs, one live link
+```
 
-![Outbound: Sales & Customer](tableau/screenshots/01_outbound_sales_customer.png)
+## Stack
 
-![Inbound: Supplier & Purchasing](tableau/screenshots/02_inbound_supplier_purchasing.png)
+| Layer | Choice |
+| --- | --- |
+| Warehouse | PostgreSQL 18 (local) |
+| Transformation | dbt-core 1.11.8 + dbt-postgres 1.10.0 (pinned) |
+| Test packages | dbt-labs/dbt_utils 1.3.3 · metaplane/dbt_expectations 0.10.10 |
+| Modelling | Kimball star (4 dims / 4 facts), single analytics schema |
+| BI | Tableau Desktop Public Edition → Tableau Public |
+| BI handoff | psql \copy mart exports → CSV → Tableau relationships on dbt surrogate keys |
+| Source data | AdventureWorks OLTP (PostgreSQL port, morenoh149/postgresDBSamples) |
 
-![Warehouse: Inventory & Stock Movement](tableau/screenshots/03_warehouse_inventory_stock_movement.png)
+## Project structure
 
-## Focus (one lead theme, kept tight)
-
-- Custom **generic tests** authored from scratch.
-- **dbt-utils** + **dbt-expectations** test packages.
-- One reusable **macro**.
-- One **incremental model** (stock-movement ledger) + one **snapshot** (price history)
-  if time allows.
-
-Stack: PostgreSQL + dbt-postgres → Tableau Public. (dbt Cloud CI/CD is intentionally
-out of scope here.)
-
-## Domain
-
-A wholesale **importer-distributor** (3PL-flavour): buys finished goods from suppliers,
-warehouses them across locations, and sells them on to retail/business customers. No
-manufacturing. Entities: suppliers/vendors, inbound purchase orders, products/SKUs,
-multi-location inventory, stock movements, customers, outbound sales orders.
+```
+operations-analytics-dbt-tableau-project/
+├─ adventureworks_ops/          # dbt project
+│  ├─ models/
+│  │  ├─ staging/               # 13 stg_* views + sources YAML (chain tests)
+│  │  └─ marts/                 # 8-table star: dim_* / fct_* + tests YAML
+│  ├─ macros/                   # extended_amount (reusable line-amount rule)
+│  ├─ tests/generic/            # not_negative, at_or_below_column (from scratch)
+│  ├─ snapshots/                # snap_product_list_price (SCD2, YAML form)
+│  └─ packages.yml              # pinned dbt_utils + dbt_expectations + dbt_date
+├─ sql/
+│  ├─ verify/                   # source-load row-count parity checks
+│  └─ export/                   # marts → CSV export (psql \copy, idempotent)
+├─ tableau/
+│  ├─ adventureworks_operations.twbx   # canonical workbook (published)
+│  ├─ data/                     # 8 mart CSVs (Tableau Public has no DB connector)
+│  └─ screenshots/              # one per dashboard (embedded below)
+├─ requirements.txt             # pinned dbt stack
+└─ *.md                         # PROJECT_PLAN, PROJECT_CONTEXT, PREFLIGHT_AUDIT,
+                                # DBT_PIPELINE walkthrough, ENGINEERING_STANDARDS
+```
 
 ## Data — pre-flight audit note
 
-**Dataset:** the AdventureWorks distribution slice (Microsoft's AdventureWorks OLTP
-sample, PostgreSQL port). Chosen after a two-round pre-flight that screened ~12
-candidate warehouse/distribution datasets (Northwind, TPC-H, Maven US Candy Distributor,
-Olist, several Kaggle/UCI sets) against a 6-point gate: small + tidy, sane types, few
-nulls, genuinely multi-table/relational, public + redistributable, no unpivot / nested
-JSON / overnight loads. AdventureWorks was selected because it is the only clean
-candidate that supplies a complete inbound→warehouse→outbound flow **and** both
-dbt-depth surfaces this mini needs: an append-only stock-movement ledger
-(`transactionhistory`, ~113k rows) for the incremental model, and a dated price history
-(`productlistpricehistory`) as a natural snapshot/SCD source. Acquisition is clean and
-verified: the `morenoh149/postgresDBSamples` repo bundles `install.sql` plus all 72
-tab-delimited CSVs (~87.5 MB) — clone the `adventureworks/` folder, run `install.sql`
-against local Postgres, no separate Microsoft download, no git-LFS, no transformation
-step. We load the full 68-table database and model a ~10-table distribution slice via
-dbt `sources`, ignoring the manufacturing/HR/person tables. Full candidate comparison
-is in `PREFLIGHT_AUDIT.md`.
-
-**Modelled slice:** vendor, purchaseorderheader, purchaseorderdetail, productvendor,
-product, productinventory, location, transactionhistory, customer, salesorderheader,
-salesorderdetail.
-
-## Setup (Phase 1 — environment & sources)
-
-- Local **PostgreSQL 18** + a pinned dbt stack (**dbt-core 1.11.8**, **dbt-postgres
-  1.10.0**) in a project venv (`requirements.txt`). Exact pins avoid pip resolving the
-  dbt-core 2.0-alpha/Fusion build, which doesn't yet support the postgres adapter.
-- The `adventureworks` database is loaded from `morenoh149/postgresDBSamples` via
-  `install.sql`; the 12-table distribution slice is verified against expected row counts
-  by `sql/verify/01_phase1_source_load_verification.sql`.
-- The dbt project lives in `adventureworks_ops/` and connects via `profiles.yml`, with
-  the password injected from the `PGPASSWORD` environment variable — no secret in
-  the repo (`.env.example` documents it).
-- Sources for the slice are defined in `models/staging/_adventureworks__sources.yml`
-  with `not_null` / `unique` / `relationships` tests across the inbound→warehouse→outbound
-  chain. `dbt test --select "source:*"` → **43 PASS**.
-
-## Repo docs
-
-- `DBT_PIPELINE.md` — layer-by-layer pipeline walkthrough (start here for the dbt depth).
-- `PROJECT_PLAN.md` — phase plan + locked scope.
-- `PROJECT_CONTEXT.md` — living context + session log.
-- `PREFLIGHT_AUDIT.md` — dataset pre-flight + GO/NO-GO rationale.
-- `ENGINEERING_STANDARDS.md` — the 10-criteria audit + phase-boundary checks applied throughout.
+The AdventureWorks distribution slice was selected after a two-round pre-flight that
+screened ~12 candidate warehouse/distribution datasets (Northwind, TPC-H, Maven Candy
+Distributor, Olist, Kaggle/UCI sets) against a 6-point gate. It won because it is the
+only clean candidate supplying a complete inbound→warehouse→outbound flow **and** both
+dbt-depth surfaces this mini needs: an append-only stock-movement ledger for the
+incremental model and a dated price history for the snapshot. Full comparison in
+`PREFLIGHT_AUDIT.md`.
 
 ## How this project was built
 
 This project was built using AI-assisted pair programming (Claude by Anthropic).
 All architecture decisions, technology selections, and final design choices are my
 own; the AI accelerated implementation and acted as a senior-DE code reviewer. The
-intent is portfolio learning — every component was built with explicit understanding
-of what it does and why. The dataset pre-flight and design rationale are captured in
-`PREFLIGHT_AUDIT.md` and `PROJECT_PLAN.md`; the `DBT_PIPELINE.md` walkthrough
-explains the pipeline layer by layer.
+intent of the project is portfolio learning — every component was built with explicit
+understanding of what it does and why. The layer-by-layer walkthrough lives in
+`DBT_PIPELINE.md`; decision records and the full build history are in
+`PROJECT_CONTEXT.md` and `PROJECT_PLAN.md`.
+
+## Project documents
+
+- `DBT_PIPELINE.md` — layer-by-layer pipeline walkthrough (start here for the dbt depth)
+- `PROJECT_PLAN.md` — locked scope, phase plan, design decisions
+- `PROJECT_CONTEXT.md` — running session state + full build history
+- `PREFLIGHT_AUDIT.md` — dataset pre-flight + GO/NO-GO rationale
+- `ENGINEERING_STANDARDS.md` — 10-criteria per-script audit + phase-boundary checks
+
+## Dashboards
+
+Three interactive dashboards in one workbook, published once:
+**[AdventureWorks Operations on Tableau Public](https://public.tableau.com/views/adventureworks_operations/OutboundSalesCustomer?:display_count=n&:origin=viz_share_link)**.
+Viewer download is enabled by design. If the viz appears blank, allowlist
+`public.tableau.com` in your ad-blocker.
+
+### Outbound: Sales & Customer
+
+![Outbound: Sales & Customer](tableau/screenshots/01_outbound_sales_customer.png)
+
+Five KPI tiles (Net Sales $109.8M, Units, Orders, AOV, Customers), monthly net-sales
+trend 2011–2014, top products, sales by product line and by customer type. Year filter
+drives every viz on the page.
+
+### Inbound: Supplier & Purchasing
+
+![Inbound: Supplier & Purchasing](tableau/screenshots/02_inbound_supplier_purchasing.png)
+
+The buy-side twin: PO Spend $63.8M KPI strip, monthly PO spend, top-10 vendors by
+spend, purchase volume by product line, and a spend-concentration split (top 10
+vendors = 43% of spend).
+
+### Warehouse: Inventory & Stock Movement
+
+![Warehouse: Inventory & Stock Movement](tableau/screenshots/03_warehouse_inventory_stock_movement.png)
+
+Deliberately differentiated layout: left KPI rail (stock on hand, SKUs, zones, items
+below reorder), stock movements by type 2011–2014 (the live AdventureWorks ledger
+unioned with its archive table), reorder alerts with per-item reorder-point reference
+lines, and an inventory-by-zone treemap. Location filter on the inventory vizzes.
+
+## Related projects
+
+Part of a data-engineering portfolio: three main projects + three mini-projects.
+
+- **Project #1 — CDC NT Transport Analytics** — dbt-first pipeline on PostgreSQL →
+  Power BI; Kimball modelling foundation.
+- **Project #2 — Retail Demand & Forecasting** — cloud warehouse + orchestration:
+  Azure SQL → Snowflake → Airflow (Docker) → dbt → Power BI, with a Cortex forecast layer.
+- **Project #3 — S&P 100 Financial Analytics Lakehouse** — AWS-native lakehouse:
+  S3 + Glue + Athena + Iceberg, dbt-athena, Step Functions, 6-page Power BI, keyless OIDC CI/CD.
+- **Mini #1 — Operations Analytics** *(this one)* — dbt testing + macros depth on
+  PostgreSQL → live Tableau Public three-dashboard workbook.
+
+## Author
+
+Phil McKechnie — Business Intelligence Analyst & Developer, Melbourne. 15+ years
+across operations, supply chain and analytics; the last 5 in dedicated BI roles
+(SQL, Tableau, Power BI). Building a data-engineering portfolio across dbt, cloud
+warehouses and AWS-native lakehouse work.
